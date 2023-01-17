@@ -1,2 +1,4 @@
 torch==1.13.1
 typing_extensions==4.4.0
+beautifulsoup4
+requests
