@@ -39,7 +39,7 @@ def configure_parser() -> argparse.Namespace:
     parser.add_argument(
         "--special-tokens",
         type=str,
-        default="[UNK]:[PAD]",
+        default="[UNK]:[EOF]:[SOS]",
         help="Special tokens which would be added to tokenizer, each token separated with semicolon."
              " Used only when `--train-tokenizer` is True. (default: '[UNK]:[EOF]:[SOS]')"
     )

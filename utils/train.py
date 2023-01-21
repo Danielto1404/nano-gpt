@@ -3,6 +3,7 @@ def train(
         valid_loader,
         learning_rate,
         epochs,
+        verbose: bool = True
 ):
     for e in range(epochs):
         pass

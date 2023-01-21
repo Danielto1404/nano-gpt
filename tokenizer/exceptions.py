@@ -15,6 +15,16 @@ class OOVException(Exception):
         return wrapper
 
 
+class TokenizerException(Exception):
+    pass
+
+
+class TokenizerInputFormatException(TokenizerException):
+    pass
+
+
 __all__ = [
-    "OOVException"
+    "OOVException",
+    "TokenizerException",
+    "TokenizerInputFormatException"
 ]

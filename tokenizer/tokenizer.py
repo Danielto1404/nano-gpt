@@ -3,7 +3,7 @@ import json
 import os
 import typing as tp
 
-from .exceptions import OOVException
+from .exceptions import OOVException, TokenizerInputFormatException
 
 
 class Tokenizer(abc.ABC):
@@ -35,32 +35,32 @@ class Tokenizer(abc.ABC):
 
     def encode(
             self,
-            texts: tp.Union[str, tp.List[str]],
+            texts: tp.Union[str, tp.List[str]]
     ) -> tp.List[tp.Union[int, tp.List[int]]]:
         if isinstance(texts, str):
-            return [self._safe_token_to_id(token) for token in texts]
+            return [self.token_to_id(token.lower() if self.to_lower else token) for token in texts]
 
         if all(map(lambda x: isinstance(x, str), texts)):
 
             return [
-                [self._safe_token_to_id(token.lower() if self.to_lower else token) for token in text]
+                [self.token_to_id(token.lower() if self.to_lower else token) for token in text]
                 for text in texts
             ]
         else:
-            raise Exception("Expected single single or list of string to be encoded.")
+            raise TokenizerInputFormatException("Expected single single or list of string to be encoded.")
 
     def decode(
             self,
             ids: tp.List[tp.Union[int, tp.List[int]]]
     ) -> tp.List[tp.Union[str, tp.List[str]]]:
         if not isinstance(ids, list):
-            assert f"Expected list of ids, but got: {type(ids)}"
+            raise TokenizerInputFormatException(f"Expected list of ids, but got: {type(ids)}")
 
         if all(map(lambda x: isinstance(x, list), ids)):
-            return [[self._safe_id_to_token(token_id) for token_id in seq] for seq in ids]
+            return [[self.id_to_token(token_id) for token_id in seq] for seq in ids]
 
         if isinstance(ids[0], int):
-            return [self._safe_id_to_token(token_id) for token_id in ids]
+            return [self.id_to_token(token_id) for token_id in ids]
 
     def __call__(self, *args, **kwargs):
         """
@@ -78,7 +78,7 @@ class Tokenizer(abc.ABC):
         :param model_name:
         :return: Tokenizer
         """
-        with open(Tokenizer._path_for_tokenizer(model_name), "r") as file:
+        with open(Tokenizer._path_for_tokenizer(model_name), mode="r", encoding="utf-8") as file:
             meta = json.load(file)
             return Tokenizer(
                 vocab=meta["vocab"],
@@ -93,7 +93,7 @@ class Tokenizer(abc.ABC):
         :param model_name: Name of model for which tokenizer is responsible for
         """
         os.makedirs(model_name, exist_ok=True)
-        with open(Tokenizer._path_for_tokenizer(model_name), mode="w") as file:
+        with open(Tokenizer._path_for_tokenizer(model_name), mode="w", encoding="utf-8") as file:
             meta = dict(vocab=self.vocab, to_lower=self.to_lower, special_tokens=self.special_tokens)
             json.dump(meta, file)
 
@@ -102,32 +102,23 @@ class Tokenizer(abc.ABC):
         return f"{model_name}/tokenizer.meta.json"
 
     @OOVException.handle_oov
-    def _safe_token_to_id(self, token: str):
+    def token_to_id(self, token: str):
         return self.vocab.get(token)
 
     @OOVException.handle_oov
-    def _safe_id_to_token(self, token_id: int):
+    def id_to_token(self, token_id: int):
         return self.__id2token.get(token_id)
 
-    @classmethod
-    def train(cls, texts: tp.List[str]) -> "Tokenizer":
-        return NotImplemented
-
-
-class CharTokenizer(Tokenizer):
     @classmethod
     def train(
             cls,
             texts: tp.List[str],
             special_tokens: tp.Optional[tp.List[str]] = None,
             to_lower: bool = True
-    ) -> "CharTokenizer":
-        tokens = list(set((c.lower() if to_lower else c for text in texts for c in text)))
-
-        return CharTokenizer.from_tokens(tokens, special_tokens, to_lower)
+    ) -> "Tokenizer":
+        return NotImplemented
 
 
 __all__ = [
     "Tokenizer",
-    "CharTokenizer"
 ]
